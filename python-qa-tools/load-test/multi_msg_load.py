@@ -17,23 +17,28 @@ parser.add_argument('-s', '--sender', type = account_type, default = keys_show("
 parser.add_argument('-r', '--receiver', type= account_type, default = keys_show("account2")[1]['address'], help= 'Receiver bech32 address')
 parser.add_argument('-n', '--num_txs', type = int, default = 1000, help= 'Number of transactions to be made, atleast should be 1000')
 args = parser.parse_args()
-FROM, TO, NUM_TXS = args.sender, args.receiver, int(args.num_txs)
+sender, receiver, NUM_TXS, amount_to_be_sent = args.sender, args.receiver, int(args.num_txs), 1000000
 
-if FROM == TO:
-    sys.exit('Error: The values of arguments "TO" and "FROM" are equal make sure to set different values')
- 
-sender, receiver, num_msgs = FROM, TO, NUM_MSGS
+if sender == receiver:
+    sys.exit('Error: The values of arguments "sender" and "receiver" are equal make sure to set different values')
+
 
 #### Fetch balances of sender and receiver accounts before executing the load test ####
-status, before_sender_balance= query_balances(sender)
+status, sender_balance_old= query_balances(sender)
 if not status:
-    sys.exit(before_sender_balance)
-before_sender_balance = before_sender_balance['balances'][0]['amount']
+    sys.exit(sender_balance_old)
+sender_balance_old = int(sender_balance_old['balances'][0]['amount'])
 
-status, before_receiver_balance = query_balances(receiver)
+#### Fetch Balances of receiver executing the load test ####
+status, receiver_balance_old = query_balances(receiver)
 if not status:
-    sys.exit(before_receiver_balance)
-before_receiver_balance = before_receiver_balance['balances'][0]['amount']
+    sys.exit(receiver_balance_old)
+receiver_balance_old = int(receiver_balance_old['balances'][0]['amount'])
+
+### Fetch Sender's expected balance after load test #####
+sender_expected_balance = sender_balance_old - amount_to_be_sent    
+### Fetch Receiver's expected balance after load test###
+
 
 #### Fetching sequence numbers of to and from accounts
 status, seq1_response = query_account(sender)
@@ -48,19 +53,19 @@ seq1no, seq2no = int(seq1_response['sequence']), int(seq2_response['sequence'])
 
 
 #### Generating unsigned transactions with a single transfer message 
+status, unsignedTxto = create_unsigned_txs(sender, receiver, amount_to_be_sent, 'unsignedto.json')
+if not status:
+    logging.error(unsignedTxto)
+
+status, unsignedTxfrom = create_unsigned_txs(receiver, sender, amount_to_be_sent, 'unsignedfrom.json')
+if not status:
+    logging.error(unsignedTxfrom)
+        
 for i in range(NUM_TXS):
-    status, unsignedTxto = create_unsigned_txs(sender, receiver, 'unsignedto.json')
-    if not status:
-        logging.error(unsignedTxto)
-    
-    status, unsignedTxfrom = create_unsigned_txs(receiver, sender, 'unsignedfrom.json')
-    if not status:
-        logging.error(unsignedTxfrom)
         
 #### Duplicating and appending transfer message in the existing array to create a multi-msg transaction        
-    for j in range(num_msgs):
-        create_multi_messages('unsignedto.json')
-        create_multi_messages('unsignedfrom.json')
+    create_multi_messages(NUM_MSGS, 'unsignedto.json')
+    create_multi_messages(NUM_MSGS, 'unsignedfrom.json')
 
     ### Signing and broadcasting the unsigned transactions from sender to receiver ###
     seqto = seq1no + i
@@ -82,18 +87,19 @@ logging.info('waiting for tx confirmation, avg time is 7s.')
 time.sleep(7)
 
 #### Verifying the balance deductions ####
-status, after_sender_balance = query_balances(sender)
+status, sender_balance_updated = query_balances(sender)
 if not status:
-    sys.exit(after_sender_balance)
-after_sender_balance = after_sender_balance['balances'][0]['amount']
+    sys.exit(sender_balance_updated)
+sender_balance_updated = sender_balance_updated['balances'][0]['amount']
 
-status, after_receiver_balance = query_balances(receiver)
+status, receiver_balance_updated = query_balances(receiver)
 if not status:
-    sys.exit(after_receiver_balance)
-after_receiver_balance = after_receiver_balance['balances'][0]['amount']
+    sys.exit(receiver_balance_updated)
+receiver_balance_updated = receiver_balance_updated['balances'][0]['amount']
 
-sender_diff = int(before_sender_balance) - int(after_sender_balance)
-receiver_diff = int(before_receiver_balance) - int(after_receiver_balance)
+sender_diff = int(sender_balance_old) - int(sender_balance_updated)
+receiver_diff = int(receiver_balance_old) - int(receiver_balance_updated)
 
-print_balance_deductions('account1', sender_diff)
-print_balance_deductions('account2', receiver_diff)
+print_balance_deductions('sender', sender_diff)
+print_balance_deductions('receiver', receiver_diff)
+
