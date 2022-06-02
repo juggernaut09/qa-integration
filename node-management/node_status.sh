@@ -1,5 +1,7 @@
 #/bin/sh
 
+## This script displays the latest block height and sync status of the nodes
+
 # get absolute parent directory path of current file
 CURPATH=`dirname $(realpath "$0")`
 cd $CURPATH

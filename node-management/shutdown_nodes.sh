@@ -1,5 +1,7 @@
 #/bin/sh
 
+## This script stops the systemd process of the nodes and removes their data directories.
+
 set -e
 
 # get absolute parent directory path of current file

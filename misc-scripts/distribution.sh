@@ -1,5 +1,8 @@
 #/bin/sh
 
+## This script executes distribuition module transactions like withdraw-rewards,
+## withdraw-commission and withdraw-all-rewards.
+
 # get absolute parent directory path of current file
 CURPATH=`dirname $(realpath "$0")`
 cd $CURPATH

@@ -1,5 +1,7 @@
 #/bin/sh
 
+## This script restarts the systemd process of the nodes. 
+
 set -e
 
 # get absolute parent directory path of current file

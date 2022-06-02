@@ -1,5 +1,8 @@
 #/bin/sh
 
+## This script sets up a multinode network and generates multilple addresses with 
+## balance for testing purposes.
+
 set -e
 
 # get absolute parent directory path of current file

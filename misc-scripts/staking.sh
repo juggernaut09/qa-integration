@@ -1,5 +1,7 @@
 #/bin/sh
 
+## This script executes staking module txs like delegate, redelegate and unbond.
+
 # get absolute parent directory path of current file
 CURPATH=`dirname $(realpath "$0")`
 cd $CURPATH
