@@ -24,7 +24,7 @@ if FROM == TO:
  
 sender, receiver, num_msgs = FROM, TO, NUM_MSGS
 
-#### Fetch Balances of sender receiver before execting the load test ####
+#### Fetch balances of sender and receiver accounts before executing the load test ####
 status, before_sender_balance= query_balances(sender)
 if not status:
     sys.exit(before_sender_balance)
@@ -36,7 +36,6 @@ if not status:
 before_receiver_balance = before_receiver_balance['balances'][0]['amount']
 
 #### Fetching sequence numbers of to and from accounts
-os.chdir(os.path.expanduser(HOME))
 status, seq1_response = query_account(sender)
 if not status:
     sys.exit(seq1_response)
@@ -67,17 +66,17 @@ for i in range(NUM_TXS):
     seqto = seq1no + i
     status, txHash = create_signed_txs('unsignedto.json', 'signedto.json', sender, seqto)
     if not status:
-        logging.error(f"sign_and_broadcast_tx to failed : {txHash}")
+        logging.error(f"sign_and_broadcast_tx from sender to receiver failed : {txHash}")
     else:
-        logging.info(f"broadcasttoTxhash: {txHash}")
+        logging.info(f"broadcasted txhash: {txHash}")
 
     ### Signing and broadcasting the unsigned transactions from receiver to sender ###
     seqfrom = seq2no + i
     status, txHash = create_signed_txs('unsignedfrom.json', 'signedfrom.json', receiver, seqfrom)
-    if not status:
-        logging.error(f"sign_and_broadcast_tx from failed : {txHash}")
+    if not status: # if the txn is unsuccessful
+        logging.error(f"sign_and_broadcast_tx from receiver to sender failed : {txHash}")
     else:
-        logging.info(f"broadcastfromTxhash: {txHash}")
+        logging.info(f"broadcasted txhash: {txHash}")
 
 logging.info('waiting for tx confirmation, avg time is 7s.')
 time.sleep(7)
